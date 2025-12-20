@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Yes — in a 40–45 minute interview, you should:
 
-## Getting Started
+Build a simple, working solution first
 
-First, run the development server:
+Keep state local
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Avoid Context unless it becomes obviously necessary
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Explain out loud how you would refactor if you had more time
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+They are grading:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Can you ship something that works?
 
-## Learn More
+Do you know why you’d choose Context vs local state?
 
-To learn more about Next.js, take a look at the following resources:
+Can you reason about tradeoffs under time pressure?
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Can you communicate decisions clearly?
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Step 1 (first 10–15 minutes): Make it work
 
-## Deploy on Vercel
+- Fetch the data and setData for dogs
+- Have two pieces of data: currentIndex and dogs
+- extract your current dog
+- display UI
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Step 2 (next 10–15 minutes): Add comments + votes locally
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Step 3: Extract components (one by one)
+
+### Possible Future Refactors
+
+- Abstracting the dog image, comment input, and comment list
+  – Loading Skeleton
+  – Event Listeners for Key Pressing for keyboard navigation to goForward and goBack
+  – use useCallback with page as a dependency and callback function is the logic
+  – With abstraction, throw state values in context to allow components to pull from context
+  Final recommendation (memorize this)
+
+In a 40–45 min interview:
+
+✅ Working app first
+
+✅ Local state
+
+✅ Clear data model
+
+✅ Explain future refactors verbally
+
+❌ Avoid Context unless necessary
+
+What NOT to do in this interview ❌
+
+❌ Redux
+
+❌ Multiple contexts
+
+❌ Perfect folder structure
+
+❌ Premature abstraction
+
+❌ “Let me refactor everything first”
