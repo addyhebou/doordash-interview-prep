@@ -1,122 +1,94 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { getDogs } from './dogapi';
-import { CommentProvider } from './context/CommentContext';
-import { AppProviders } from './context/AppProviders';
-import { DogImage } from './components/DogImage';
-import { CommentInput } from './components/CommentInput';
-import { CommentList } from './components/CommentList';
-import { LoadingSkeleton } from './components/LoadingSkeleton';
+import { MyCommentList } from './myOwnComponents/MyCommentList';
+import { MyCommentInput } from './myOwnComponents/MyCommentInput';
 
-type DogData = {
+export type Comment = {
+  id: number;
+  text: string;
+  likes: number;
+  dislikes: number;
+};
+type Dog = {
+  id: number;
   title: string;
   url: string;
+  comments: Comment[];
 };
-
-function DogCarousel() {
-  const [page, setPage] = useState(0);
-  const [dogs, setCurrentDogs] = useState<DogData[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Navigation with keyboard support
-  const goBack = useCallback(() => {
-    if (page > 0) setPage((page) => page - 1);
-  }, [page]);
-
-  const goForward = useCallback(() => {
-    if (dogs && page < dogs.length - 1) setPage((page) => page + 1);
-  }, [dogs, page]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        goBack();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        goForward();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [goBack, goForward]);
-
-  // Preload next image for better performance
-  useEffect(() => {
-    if (dogs && page < dogs.length - 1) {
-      const nextImage = new Image();
-      nextImage.src = dogs[page + 1].url;
-    }
-  }, [dogs, page]);
-
+export default function Home() {
+  const [dogs, setDogs] = useState<Dog[] | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [commentText, setCommentText] = useState('');
   useEffect(() => {
     const fetchDogData = async () => {
-      try {
-        setLoading(true);
-        const data = await getDogs();
-        setCurrentDogs(data);
-      } catch (error) {
-        console.error('Failed to fetch dog data:', error);
-      } finally {
-        setLoading(false);
-      }
+      const impartialData = (await getDogs()) as Dog[];
+      const data = impartialData.map((dog) => {
+        return { ...dog, comments: [] };
+      });
+      setDogs(data);
     };
     fetchDogData();
   }, []);
 
-  if (loading || !dogs) {
-    return <LoadingSkeleton />;
-  }
+  if (!dogs) return <p>Loading...</p>;
+
+  const currentDog = { ...dogs[currentIndex] };
+
+  const goForward = () => {
+    setCurrentIndex((currentIndex) => (currentIndex + 1) % dogs.length);
+  };
+  const goBack = () => {
+    if (currentIndex === 0) setCurrentIndex(dogs.length - 1);
+    else setCurrentIndex((currentIndex) => currentIndex - 1);
+  };
+
+  const handleCommentText = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    setCommentText(e.target.value);
+  };
+  const handleSubmitComment = () => {
+    const newComment: Comment = {
+      text: commentText,
+      dislikes: 0,
+      likes: 0,
+      id: Date.now(),
+    };
+    setDogs((dogs) =>
+      dogs!.map((dog, i) => {
+        if (i !== currentIndex) return dog;
+        return { ...dog, comments: [...dog.comments, newComment] };
+      })
+    );
+    setCommentText('');
+  };
+
+  const handleVote = (id: number, type: 'like' | 'dislike') => {
+    const currentDogs = [...dogs];
+    const modifiedCurrentDog = currentDog;
+    const commentToEdit = modifiedCurrentDog.comments.find(
+      (comment) => comment.id === id
+    );
+    if (!commentToEdit) throw Error('Comment does not exist');
+    if (type === 'dislike') commentToEdit.dislikes += 1;
+    else commentToEdit.likes += 1;
+    currentDogs[currentIndex] = modifiedCurrentDog;
+    setDogs(currentDogs);
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        padding: '20px',
-        maxWidth: '1000px',
-        margin: '0 auto',
-      }}
-    >
-      <h1>Welcome to the Dog Pictures App!</h1>
-      <DogImage
-        url={dogs[page].url}
-        title={dogs[page].title}
-        onPrevious={goBack}
-        onNext={goForward}
-        canGoPrevious={page > 0}
-        canGoNext={page < dogs.length - 1}
+    <div>
+      <h1>Dog Carousel</h1>
+      <img src={currentDog.url} alt={'dog image'} />
+      <button onClick={goBack}>👈🏿 Go Back</button>
+      <button onClick={goForward}>👉🏿 Go Forward</button>
+      <MyCommentInput
+        commentText={commentText}
+        handleCommentText={handleCommentText}
+        handleSubmitComment={handleSubmitComment}
       />
-
-      <CommentInput pageIndex={page} />
-      <CommentList pageIndex={page} />
-
-      {/* Navigation hint */}
-      <div
-        style={{
-          marginTop: '20px',
-          color: '#666',
-          fontSize: '14px',
-          textAlign: 'center',
-        }}
-      >
-        <p>
-          Use arrow keys or buttons to navigate • Page {page + 1} of{' '}
-          {dogs.length}
-        </p>
-      </div>
+      <MyCommentList comments={currentDog.comments} handleVote={handleVote} />
     </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <AppProviders>
-      <DogCarousel />
-    </AppProviders>
   );
 }
 
