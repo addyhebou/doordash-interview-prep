@@ -1,75 +1,74 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getDogs } from './dogapi';
+import { CommentProvider } from './context/CommentContext';
+import { AppProviders } from './context/AppProviders';
+import { DogImage } from './components/DogImage';
+import { CommentInput } from './components/CommentInput';
+import { CommentList } from './components/CommentList';
+import { LoadingSkeleton } from './components/LoadingSkeleton';
 
 type DogData = {
   title: string;
   url: string;
 };
 
-type Comment = {
-  value: string;
-  likes: number;
-  dislikes: number;
-  id: number;
-};
-
-export default function Home() {
+function DogCarousel() {
   const [page, setPage] = useState(0);
   const [dogs, setCurrentDogs] = useState<DogData[] | null>(null);
-  const [value, setValue] = useState('');
-  const [comments, setComments] = useState<Map<Number, Comment[]>>(new Map());
-  const [latestCommentID, setLatestCommentID] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const goBack = () => page > 0 && setPage((page) => page - 1);
-  const goForward = () =>
-    dogs && page < dogs.length - 1 && setPage((page) => page + 1);
+  // Navigation with keyboard support
+  const goBack = useCallback(() => {
+    if (page > 0) setPage((page) => page - 1);
+  }, [page]);
 
-  const handleText = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    setValue(e.target.value);
-  };
+  const goForward = useCallback(() => {
+    if (dogs && page < dogs.length - 1) setPage((page) => page + 1);
+  }, [dogs, page]);
 
-  const handleSubmit = () => {
-    const currentComments = comments.get(page);
-    const newComment: Comment = {
-      value,
-      likes: 0,
-      dislikes: 0,
-      id: latestCommentID,
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goBack();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goForward();
+      }
     };
-    console.log({ newComment });
-    comments.set(
-      page,
-      currentComments ? [...currentComments, newComment] : [newComment]
-    );
-    setValue('');
-    setLatestCommentID((commentID) => commentID + 1);
-  };
 
-  const vote = (action: 'down' | 'up', id: number) => {
-    console.log({ comments });
-    const currentComments = comments.get(page);
-    if (!currentComments) return;
-    const comment = currentComments.find((comment) => comment.id === id);
-    if (!comment) return;
-    if (action === 'down') comment.dislikes += 1;
-    else if (action === 'up') comment.likes += 1;
-  };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [goBack, goForward]);
+
+  // Preload next image for better performance
+  useEffect(() => {
+    if (dogs && page < dogs.length - 1) {
+      const nextImage = new Image();
+      nextImage.src = dogs[page + 1].url;
+    }
+  }, [dogs, page]);
 
   useEffect(() => {
     const fetchDogData = async () => {
       try {
+        setLoading(true);
         const data = await getDogs();
-        console.log({ data });
         setCurrentDogs(data);
       } catch (error) {
-        console.log(error);
+        console.error('Failed to fetch dog data:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDogData();
   }, []);
-  if (!dogs) return <p>Loading...</p>;
+
+  if (loading || !dogs) {
+    return <LoadingSkeleton />;
+  }
   return (
     <div
       style={{
@@ -77,64 +76,47 @@ export default function Home() {
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
+        padding: '20px',
+        maxWidth: '1000px',
+        margin: '0 auto',
       }}
     >
       <h1>Welcome to the Dog Pictures App!</h1>
-      <img
-        src={dogs[page].url}
-        alt={'Dog doing this'}
-        style={{ height: '500px' }}
+      <DogImage
+        url={dogs[page].url}
+        title={dogs[page].title}
+        onPrevious={goBack}
+        onNext={goForward}
+        canGoPrevious={page > 0}
+        canGoNext={page < dogs.length - 1}
       />
+
+      <CommentInput pageIndex={page} />
+      <CommentList pageIndex={page} />
+
+      {/* Navigation hint */}
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'row',
-          width: '800px',
-          justifyContent: 'space-between',
-          alignItems: 'top',
+          marginTop: '20px',
+          color: '#666',
+          fontSize: '14px',
+          textAlign: 'center',
         }}
       >
-        <button onClick={goBack}>{'<'}</button>
-        <p>{dogs[page].title}</p>
-        <button onClick={goForward}>{'>'}</button>
+        <p>
+          Use arrow keys or buttons to navigate • Page {page + 1} of{' '}
+          {dogs.length}
+        </p>
       </div>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          width: '180px',
-          justifyContent: 'space-between',
-          alignItems: 'top',
-        }}
-      >
-        <input
-          type={'text'}
-          placeholder="Comment here"
-          value={value}
-          onChange={handleText}
-        />
-        <button type="submit" onClick={handleSubmit}>
-          Submit
-        </button>
-      </div>
-      {comments.get(page)?.map((comment) => (
-        <div
-          style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}
-          key={comment.id}
-        >
-          <button
-            style={{ color: 'red' }}
-            onClick={() => vote('down', comment.id)}
-          >
-            Downvote – {comment.dislikes}
-          </button>
-          <p>{comment.value}</p>
-          <button onClick={() => vote('up', comment.id)}>
-            Upvote – {comment.likes}
-          </button>
-        </div>
-      ))}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AppProviders>
+      <DogCarousel />
+    </AppProviders>
   );
 }
 
