@@ -1,60 +1,53 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { getDogs } from './dogapi';
-import { CommentField } from './myComponents/CommentField';
-import { CommentListSection } from './myComponents/CommentListSection';
-import { ImageField } from './myComponents/ImageField';
+import { ImageCarousel } from './myComponents/ImageCarousel';
+import { MyCommentInput } from './myComponents/CommentInput';
+import { CommentList } from './myComponents/CommentList';
+
+type Dog = {
+  id: number;
+  title: string;
+  url: string;
+  comments: Comment[];
+};
 
 export type Comment = {
   id: number;
   text: string;
-  dislikes: number;
   likes: number;
+  dislikes: number;
 };
 
-type Dog = {
-  title: string;
-  url: string;
-  comments?: Comment[];
-};
 export default function Home() {
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
   const [commentText, setCommentText] = useState<string>('');
 
-  const currentDog = dogs[currentIndex];
-
   const handlePrev = () => {
-    setCurrentIndex((currentIndex) =>
-      currentIndex === 0 ? dogs.length - 1 : currentIndex - 1
-    );
+    if (currentPageIndex === 0) setCurrentPageIndex(dogs.length - 1);
+    else setCurrentPageIndex((page) => page - 1);
   };
-
-  const handleAdvance = () => {
-    setCurrentIndex((currentIndex) => (currentIndex + 1) % dogs.length);
+  const handleNext = () => {
+    setCurrentPageIndex((page) => (page + 1) % dogs.length);
   };
-
   const handleCommentText = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     setCommentText(e.target.value);
   };
-
   const handleSubmitComment = () => {
     const newComment: Comment = {
       id: Date.now(),
       text: commentText,
-      dislikes: 0,
       likes: 0,
+      dislikes: 0,
     };
-    setDogs((dogs) =>
-      dogs.map((dog, ind) => {
-        if (ind === currentIndex) {
-          return {
-            ...dog,
-            comments: dog.comments
-              ? [...dog.comments, newComment]
-              : [newComment],
-          };
+    setDogs(
+      dogs.map((dog) => {
+        if (dog.id === currentPageIndex) {
+          return { ...dog, comments: [...dog.comments, newComment] };
         }
         return dog;
       })
@@ -62,31 +55,13 @@ export default function Home() {
     setCommentText('');
   };
 
-  const handleDislike = (commentID: number) => {
-    setDogs((dogs) =>
-      dogs.map((dog, ind) => {
-        if (ind === currentIndex) {
-          return {
-            ...dog,
-            comments: dog.comments!.map((comment) => {
-              if (comment.id === commentID) {
-                return { ...comment, dislikes: comment.dislikes + 1 };
-              }
-              return comment;
-            }),
-          };
-        }
-        return dog;
-      })
-    );
-  };
   const handleLike = (commentID: number) => {
-    setDogs((dogs) =>
-      dogs.map((dog, ind) => {
-        if (ind === currentIndex) {
+    setDogs(
+      dogs.map((dog) => {
+        if (dog.id === currentPageIndex) {
           return {
             ...dog,
-            comments: dog.comments!.map((comment) => {
+            comments: dog.comments.map((comment) => {
               if (comment.id === commentID) {
                 return { ...comment, likes: comment.likes + 1 };
               }
@@ -98,46 +73,76 @@ export default function Home() {
       })
     );
   };
+  const handleDislike = (commentID: number) => {
+    setDogs(
+      dogs.map((dog) => {
+        if (dog.id === currentPageIndex) {
+          return {
+            ...dog,
+            comments: dog.comments.map((comment) => {
+              if (comment.id === commentID) {
+                return { ...comment, dislikes: comment.dislikes + 1 };
+              }
+              return comment;
+            }),
+          };
+        }
+        return dog;
+      })
+    );
+  };
 
   useEffect(() => {
-    const fetchDogData = async () => {
-      const data = (await getDogs()) as Dog[];
-      setDogs(data);
+    const fetchData = async () => {
+      try {
+        const data = await getDogs();
+        setDogs(
+          data.map((dog, id) => {
+            return { ...dog, comments: [], id };
+          })
+        );
+      } catch (error) {
+        console.error('Error with fetching dog data: ', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchDogData();
+    setLoading(true);
+    fetchData();
   }, []);
 
-  if (dogs.length === 0) return <p>Loading...</p>;
+  if (loading) return <p>Loading...</p>;
+
+  if (dogs.length === 0) return <p>No dogs fetched...</p>;
+
+  const currentDog = dogs[currentPageIndex];
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <h1>Carousel</h1>
-      <ImageField
+      <ImageCarousel
         url={currentDog.url}
         title={currentDog.title}
+        handleNext={handleNext}
         handlePrev={handlePrev}
-        handleAdvance={handleAdvance}
       />
-      <CommentField
+      <MyCommentInput
         commentText={commentText}
-        handleCommentText={handleCommentText}
-        handleSubmitComment={handleSubmitComment}
+        onChange={handleCommentText}
+        onSubmit={handleSubmitComment}
       />
-
-      {currentDog.comments && (
-        <CommentListSection
-          comments={currentDog.comments}
-          handleDislike={handleDislike}
-          handleLike={handleLike}
-        />
-      )}
+      <CommentList
+        comments={currentDog.comments}
+        handleDislike={handleDislike}
+        handleLike={handleLike}
+      />
     </div>
   );
 }

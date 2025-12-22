@@ -2,54 +2,59 @@ interface Props {
   url: string;
   title: string;
   handlePrev: () => void;
-  handleAdvance: () => void;
+  handleNext: () => void;
 }
-export const ImageField = ({
+export const ImageCarousel = ({
   url,
   title,
   handlePrev,
-  handleAdvance,
+  handleNext,
 }: Props) => {
   return (
     <div
       style={{
-        width: '50vw',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
         flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <img
         src={url}
-        alt={`Image of dog: ${title}`}
+        alt={title}
         style={{
-          border: '2px solid purple',
+          width: '40vw',
         }}
       />
+      <p
+        style={{
+          width: '40vw',
+        }}
+      >
+        {title}
+      </p>
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          border: '2px solid blue',
+          flexDirection: 'row',
           alignItems: 'center',
+          justifyContent: 'space-between',
           width: '100%',
         }}
       >
         <button
-          onClick={handlePrev}
           style={{
             fontSize: '2em',
           }}
+          onClick={handlePrev}
         >
           ⬅️
         </button>
-        <p>{title}</p>
         <button
-          onClick={handleAdvance}
           style={{
             fontSize: '2em',
           }}
+          onClick={handleNext}
         >
           ➡️
         </button>
