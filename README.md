@@ -27,7 +27,7 @@ Step 1 (first 10–15 minutes): Make it work
 
 Step 2 (next 10–15 minutes): Add comments + votes locally
 
-Step 3: Extract components (one by one)
+Step 3: Ask what is next priority: styling to match png or Extract components (one by one)
 
 ### Possible Future Refactors
 
@@ -36,7 +36,28 @@ Step 3: Extract components (one by one)
   – Event Listeners for Key Pressing for keyboard navigation to goForward and goBack
   – use useCallback with page as a dependency and callback function is the logic
   – With abstraction, throw state values in context to allow components to pull from context
-  Final recommendation (memorize this)
+  - ✅ Immutable state update (if not already fixed)
+    – Disable submit on empty comment
+
+2️⃣ Add one micro-UX improvement (2 minutes)
+
+This is small but powerful.
+
+Examples:
+
+Show comment count
+
+“No comments yet” placeholder
+
+Loading state per image
+
+Disable buttons when loading
+
+This shows:
+
+“I think about users, not just code.”
+
+Final recommendation (memorize this)
 
 In a 40–45 min interview:
 
