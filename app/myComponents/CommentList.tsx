@@ -2,49 +2,46 @@ import { Comment } from '../page';
 
 interface Props {
   comments: Comment[];
-  handleLike: (commentID: number) => void;
-  handleDislike: (commentID: number) => void;
+  handleVote: (commentID: number, action: 'like' | 'dislike') => void;
 }
-export const CommentList = ({ comments, handleLike, handleDislike }: Props) => {
+export const CommentList = ({ comments, handleVote }: Props) => {
   return (
     <div>
       {!!comments.length ? (
-        comments.map((comment) => {
-          return (
-            <div
-              key={comment.id}
+        comments.map((comment) => (
+          <div
+            key={comment.id}
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '20px',
+            }}
+          >
+            <button
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '20px',
+                color: 'red',
+                border: '2px solid red',
+                borderRadius: '20%',
               }}
+              onClick={() => handleVote(comment.id, 'dislike')}
             >
-              <button
-                style={{
-                  color: 'red',
-                  border: '2px solid red',
-                  borderRadius: '20%',
-                }}
-                onClick={() => handleDislike(comment.id)}
-              >
-                👎 {comment.dislikes}
-              </button>
-              <p>{comment.text}</p>
-              <button
-                style={{
-                  color: 'green',
-                  border: '2px solid green',
-                  borderRadius: '20%',
-                }}
-                onClick={() => handleLike(comment.id)}
-              >
-                👍 {comment.likes}
-              </button>
-            </div>
-          );
-        })
+              👎 {comment.dislikes}
+            </button>
+            <p>{comment.text}</p>
+            <button
+              style={{
+                color: 'green',
+                border: '2px solid green',
+                borderRadius: '20%',
+              }}
+              onClick={() => handleVote(comment.id, 'like')}
+            >
+              👍 {comment.likes}
+            </button>
+          </div>
+        ))
       ) : (
         <p>No comments added for this image – add one now!</p>
       )}
