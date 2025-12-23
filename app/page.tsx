@@ -45,52 +45,51 @@ export default function Home() {
       dislikes: 0,
     };
     setDogs(
-      dogs.map((dog) => {
-        if (dog.id === currentPageIndex) {
-          return { ...dog, comments: [...dog.comments, newComment] };
-        }
-        return dog;
-      })
+      dogs.map((dog) =>
+        dog.id === currentPageIndex
+          ? { ...dog, comments: [...dog.comments, newComment] }
+          : dog
+      )
     );
     setCommentText('');
   };
 
-  const handleLike = (commentID: number) => {
+  const handleVote = (commentID: number, action: 'like' | 'dislike') => {
     setDogs(
-      dogs.map((dog) => {
-        if (dog.id === currentPageIndex) {
-          return {
-            ...dog,
-            comments: dog.comments.map((comment) => {
-              if (comment.id === commentID) {
-                return { ...comment, likes: comment.likes + 1 };
-              }
-              return comment;
-            }),
-          };
-        }
-        return dog;
-      })
+      dogs.map((dog) =>
+        dog.id === currentPageIndex
+          ? {
+              ...dog,
+              comments: dog.comments.map((comment) =>
+                comment.id === commentID
+                  ? action === 'dislike'
+                    ? { ...comment, dislikes: comment.dislikes + 1 }
+                    : { ...comment, likes: comment.likes + 1 }
+                  : comment
+              ),
+            }
+          : dog
+      )
     );
   };
-  const handleDislike = (commentID: number) => {
-    setDogs(
-      dogs.map((dog) => {
-        if (dog.id === currentPageIndex) {
-          return {
-            ...dog,
-            comments: dog.comments.map((comment) => {
-              if (comment.id === commentID) {
-                return { ...comment, dislikes: comment.dislikes + 1 };
-              }
-              return comment;
-            }),
-          };
-        }
-        return dog;
-      })
-    );
+
+  const handleKeyPress = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      handlePrev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      handleNext();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmitComment();
+    }
   };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [handleKeyPress]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,11 +137,7 @@ export default function Home() {
         onChange={handleCommentText}
         onSubmit={handleSubmitComment}
       />
-      <CommentList
-        comments={currentDog.comments}
-        handleDislike={handleDislike}
-        handleLike={handleLike}
-      />
+      <CommentList comments={currentDog.comments} handleVote={handleVote} />
     </div>
   );
 }
