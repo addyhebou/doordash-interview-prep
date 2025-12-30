@@ -4,6 +4,7 @@ import { getDogs } from './dogapi';
 import { Carousel } from './components/Carousel';
 import { CommentInput } from './components/CommentInput';
 import { CommentSection } from './components/CommentSection';
+import { RatingInput } from './components/RatingInput';
 
 export interface Comment {
   id: number;
@@ -23,6 +24,9 @@ export default function Home() {
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [commentText, setCommentText] = useState<string>('');
+  const [rating, setRating] = useState<number>(0);
+  const [numOfRatings, setNumOfRatings] = useState<number>(0);
+  const [average, setAverage] = useState<number>(0);
 
   const handleNext = () => {
     setCurrentPageIndex((page) => (page + 1) % dogs.length);
@@ -104,6 +108,19 @@ export default function Home() {
     }
   };
 
+  const handleRating = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const value = parseInt(e.target.value);
+    if (isNaN(value)) throw Error('Not a valid number');
+    setRating(value);
+  };
+
+  const handleSubmitRating = () => {
+    const currentSum = average * numOfRatings;
+    setAverage((currentSum + rating) / (numOfRatings + 1));
+    setNumOfRatings((num) => num + 1);
+  };
+
   // Keyboard Navigation
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -150,6 +167,12 @@ export default function Home() {
         handleCommentText={handleCommentText}
         handleSubmitComment={handleSubmitComment}
       />
+      <RatingInput
+        rating={rating}
+        handleRating={handleRating}
+        handleSubmitRating={handleSubmitRating}
+      />
+      <p>Rating average: {average}</p>
       {/* Comment Section */}
       <CommentSection
         comments={currentDog.comments}
