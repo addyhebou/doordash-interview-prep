@@ -1,24 +1,22 @@
 'use client';
-
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getDogs } from './dogapi';
-import { ImageCarousel } from './components/ImageCarousel';
-import { MyCommentInput } from './components/CommentInput';
-import { CommentList } from './components/CommentList';
+import { Carousel } from './components/Carousel';
+import { CommentInput } from './components/CommentInput';
+import { CommentSection } from './components/CommentSection';
 
-type Dog = {
-  id: number;
-  title: string;
-  url: string;
-  comments: Comment[];
-};
-
-export type Comment = {
+export interface Comment {
   id: number;
   text: string;
   likes: number;
   dislikes: number;
-};
+}
+interface Dog {
+  id: number;
+  title: string;
+  url: string;
+  comments: Comment[];
+}
 
 export default function Home() {
   const [dogs, setDogs] = useState<Dog[]>([]);
@@ -26,30 +24,33 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [commentText, setCommentText] = useState<string>('');
 
+  const handleNext = () => {
+    setCurrentPageIndex((page) => (page + 1) % dogs.length);
+  };
+
   const handlePrev = () => {
     if (currentPageIndex === 0) setCurrentPageIndex(dogs.length - 1);
     else setCurrentPageIndex((page) => page - 1);
   };
-  const handleNext = () => {
-    setCurrentPageIndex((page) => (page + 1) % dogs.length);
-  };
+
   const handleCommentText = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     setCommentText(e.target.value);
   };
+
   const handleSubmitComment = () => {
+    if (commentText.length === 0) return;
     const newComment: Comment = {
       id: Date.now(),
       text: commentText,
-      likes: 0,
       dislikes: 0,
+      likes: 0,
     };
     setDogs(
       dogs.map((dog) => {
         if (dog.id === currentPageIndex) {
           return { ...dog, comments: [...dog.comments, newComment] };
-        }
-        return dog;
+        } else return dog;
       })
     );
     setCommentText('');
@@ -68,8 +69,7 @@ export default function Home() {
               return comment;
             }),
           };
-        }
-        return dog;
+        } else return dog;
       })
     );
   };
@@ -86,15 +86,34 @@ export default function Home() {
               return comment;
             }),
           };
-        }
-        return dog;
+        } else return dog;
       })
     );
   };
 
+  const handleKeyPress = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      handleNext();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      handlePrev();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmitComment();
+    }
+  };
+
+  // Keyboard Navigation
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [handleKeyPress]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const data = await getDogs();
         setDogs(
           data.map((dog, id) => {
@@ -102,46 +121,40 @@ export default function Home() {
           })
         );
       } catch (error) {
-        console.error('Error with fetching dog data: ', error);
+        console.error('Error fetching dogs from API: ', error);
       } finally {
         setLoading(false);
       }
     };
-    setLoading(true);
     fetchData();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
-
-  if (dogs.length === 0) return <p>No dogs fetched...</p>;
+  if (loading) return <h1>Loading...</h1>;
+  if (dogs.length === 0) return <h1>No dogs fetched...</h1>;
 
   const currentDog = dogs[currentPageIndex];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
+    <div>
       <h1>Carousel</h1>
-      <ImageCarousel
+      {/* Carousel Component */}
+      <Carousel
         url={currentDog.url}
         title={currentDog.title}
-        handleNext={handleNext}
         handlePrev={handlePrev}
+        handleNext={handleNext}
       />
-      <MyCommentInput
+      {/* Comment Input */}
+      <CommentInput
         commentText={commentText}
-        onChange={handleCommentText}
-        onSubmit={handleSubmitComment}
+        handleCommentText={handleCommentText}
+        handleSubmitComment={handleSubmitComment}
       />
-      <CommentList
+      {/* Comment Section */}
+      <CommentSection
         comments={currentDog.comments}
-        handleDislike={handleDislike}
         handleLike={handleLike}
+        handleDislike={handleDislike}
       />
     </div>
   );

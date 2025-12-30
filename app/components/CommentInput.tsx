@@ -1,17 +1,37 @@
 interface Props {
   commentText: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: () => void;
+  handleCommentText: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSubmitComment: () => void;
 }
-export const MyCommentInput = ({ commentText, onChange, onSubmit }: Props) => {
+
+export const CommentInput = ({
+  commentText,
+  handleCommentText,
+  handleSubmitComment,
+}: Props) => {
   return (
-    <div>
+    <div
+      style={{
+        display: 'flex',
+        border: '2px solid red',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
       <input
         value={commentText}
-        onChange={onChange}
-        placeholder="Type your comment here"
+        onChange={handleCommentText}
+        placeholder="Enter comment"
       />
-      <button type="submit" onClick={onSubmit}>
+      <button
+        onClick={handleSubmitComment}
+        style={{
+          padding: '20px',
+          borderRadius: '20px',
+          backgroundColor: 'grey',
+        }}
+      >
         Submit Comment
       </button>
     </div>
