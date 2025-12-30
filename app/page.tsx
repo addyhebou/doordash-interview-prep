@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { getDogs } from './dogapi';
-import { ImageCarousel } from './myComponents/ImageCarousel';
-import { MyCommentInput } from './myComponents/CommentInput';
-import { CommentList } from './myComponents/CommentList';
+import { ImageCarousel } from './components/ImageCarousel';
+import { MyCommentInput } from './components/CommentInput';
+import { CommentList } from './components/CommentList';
 
 type Dog = {
   id: number;
